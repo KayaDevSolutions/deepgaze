@@ -31,6 +31,11 @@ class haarCascade:
         self.face_h = 0
         self.face_w = 0
 
+        self.e_x = 0
+        self.e_y = 0
+        self.e_w = 0
+        self.e_h = 0
+
         if(os.path.isfile(frontalFacePath) == False and os.path.isfile(profileFacePath)==False):
             raise ValueError('haarCascade: the files specified do not exist.') 
 
@@ -39,6 +44,7 @@ class haarCascade:
 
         self._frontalCascade = cv2.CascadeClassifier(frontalFacePath)
         self._profileCascade = cv2.CascadeClassifier(profileFacePath)
+        self._eyecascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 
 
     ##
@@ -88,7 +94,7 @@ class haarCascade:
                 self._findFrontalFace(inputImg, frontalScaleFactor, minSizeX, minSizeY)
                 if(self.is_face_present == True):
                     self.face_type = 1
-                    return (self.face_x, self.face_y, self.face_w, self.face_h)
+                    return (self.face_x, self.face_y, self.face_w, self.face_h, self.e_x, self.e_y, self.e_w, self.e_h)
 
             #Cascade: frontal faces rotated (Left)
             if(runFrontalRotated==True and position==2):
@@ -98,7 +104,7 @@ class haarCascade:
                 self._findFrontalFace(inputImgRot, rotatedFrontalScaleFactor, minSizeX, minSizeY)
                 if(self.is_face_present == True):
                     self.face_type = 2
-                    return (self.face_x, self.face_y, self.face_w, self.face_h)
+                    return (self.face_x, self.face_y, self.face_w, self.face_h, self.e_x, self.e_y, self.e_w, self.e_h)
 
             #Cascade: frontal faces rotated (Right)
             if(runFrontalRotated==True and position==3):
@@ -115,7 +121,7 @@ class haarCascade:
                 self._findProfileFace(inputImg, leftScaleFactor, minSizeX, minSizeY)
                 if(self.is_face_present == True):
                     self.face_type = 4
-                    return (self.face_x, self.face_y, self.face_w, self.face_h)
+                    return (self.face_x, self.face_y, self.face_w, self.face_h, )
 
             #Cascade: right profiles
             if(runRight==True and position==5):
@@ -126,6 +132,8 @@ class haarCascade:
                     f_w, f_h = flipped_inputImg.shape[::-1] #finding the max dimensions
                     self.face_x = f_w - (self.face_x + self.face_w) #reshape the x to unfold the mirroring
                     return (self.face_x, self.face_y, self.face_w, self.face_h)
+
+        
 
 
         #It returns zeros if nothing is found
@@ -163,22 +171,49 @@ class haarCascade:
             self.face_w = faces[0][2]
             self.face_h = faces[0][3]
             self.is_face_present = True
-            return (faces[0][0], faces[0][1], faces[0][2], faces[0][3])
+
+            eyes = self._eyecascade.detectMultiScale(
+                                            inputImg,             
+                                            scaleFactor=scaleFactor,
+                                            minNeighbors=minNeighbors,
+                                            minSize=(minSizeX, minSizeY),
+                                            flags=cv2.CASCADE_SCALE_IMAGE)
+
+            self.e_x = eyes[0][0]    
+            self.e_y = eyes[0][1]
+            self.e_w = eyes[0][2]
+            self.e_h = eyes[0][3]                       
+
+            return (faces[0][0], faces[0][1], faces[0][2], faces[0][3], eyes[0][0], eyes[0][1], eyes[0][2], eyes[0][3])
 
         #If there are more than 1 face
         # it returns the position of
         # the one with the bigger area.
         if(len(faces) > 1):
-             area_list = list()      
-             for x,y,h,w in faces:
-                 area_list.append(w*h)
-             max_index = area_list.index(max(area_list)) #return the index of max element
-             self.face_x = faces[max_index][0]
-             self.face_y = faces[max_index][1]
-             self.face_w = faces[max_index][2]
-             self.face_h = faces[max_index][3]
-             self.is_face_present = True
-             return (faces[max_index][0], faces[max_index][1], faces[max_index][2], faces[max_index][3])            
+            area_list = list()      
+            for x,y,h,w in faces:
+                area_list.append(w*h)
+            max_index = area_list.index(max(area_list)) #return the index of max element
+            self.face_x = faces[max_index][0]
+            self.face_y = faces[max_index][1]
+            self.face_w = faces[max_index][2]
+            self.face_h = faces[max_index][3]
+            self.is_face_present = True
+
+            eyes = self._eyecascade.detectMultiScale(
+                                            inputImg,             
+                                            scaleFactor=scaleFactor,
+                                            minNeighbors=minNeighbors,
+                                            minSize=(minSizeX, minSizeY),
+                                            flags=cv2.CASCADE_SCALE_IMAGE)
+
+            self.e_x = eyes[max_index][0]    
+            self.e_y = eyes[max_index][1]
+            self.e_w = eyes[max_index][2]
+            self.e_h = eyes[max_index][3]
+
+            return (faces[max_index][0], faces[max_index][1], faces[max_index][2], faces[max_index][3], \
+                    eyes[max_index][0], eyes[max_index][1], eyes[max_index][2], eyes[max_index][3])            
 
     ##
     # Find a profile face in the input image
@@ -209,6 +244,9 @@ class haarCascade:
             self.face_w = faces[0][2]
             self.face_h = faces[0][3]
             self.is_face_present = True
+
+             
+
             return (faces[0][0], faces[0][1], faces[0][2], faces[0][3])
 
         #If there are more than 1 face
@@ -224,7 +262,9 @@ class haarCascade:
              self.face_w = faces[max_index][2]
              self.face_h = faces[max_index][3]
              self.is_face_present = True
-             return (faces[max_index][0], faces[max_index][1], faces[max_index][2], faces[max_index][3]) 
+             return (faces[max_index][0], faces[max_index][1], faces[max_index][2], faces[max_index][3])
+
+    
 
 
 

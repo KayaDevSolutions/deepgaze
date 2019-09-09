@@ -141,6 +141,7 @@ def main():
     my_cascade = haarCascade("../etc/xml/haarcascade_frontalface_alt.xml", "../etc/xml/haarcascade_profileface.xml")
     my_detector = faceLandmarkDetection('../etc/shape_predictor_68_face_landmarks.dat')
 
+
     #Error counter definition
     no_face_counter = 0
 
@@ -255,10 +256,13 @@ def main():
             roi_y2 = face_y2 + roi_resize_h
             if(roi_y2 > cam_h): roi_y2 = cam_h
 
+            eyes = eye_cascade.detectMultiScale()
+
             #Debugging printing utilities
             if(DEBUG == True):
                 print("FACE: ", face_x1, face_y1, face_x2, face_y2, face_w, face_h)
                 print("ROI: ", roi_x1, roi_y1, roi_x2, roi_y2, roi_w, roi_h)
+                print("EYE: ", eye_x1, eye_y1, eye_x2, eye_y2, eye_w, eye_h)
                 #Drawing a green rectangle
                 # (and text) around the face.
                 text_x1 = face_x1
