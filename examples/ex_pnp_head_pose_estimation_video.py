@@ -69,7 +69,7 @@ def main():
             # Define the codec and create VideoWriter object
             #fourcc = cv2.VideoWriter_fourcc(*'XVID')
             output_path = sys.argv[2]
-            fourcc = cv2.cv.CV_FOURCC(*'XVID')
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
             out = cv2.VideoWriter(output_path, fourcc, 20.0, (1280,720))
     else:
         print("You have to pass as argument the path to a video file and the path to the output file to produce, for example: \n python ex_pnp_pose_estimation_video.py /home/video.mpg ./output.avi")
